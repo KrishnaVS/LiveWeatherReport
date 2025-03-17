@@ -13,11 +13,6 @@
             color: #fff;
             text-align: center;
             padding: 20px;
-            animation: backgroundAnimation 5s infinite alternate;
-        }
-        @keyframes backgroundAnimation {
-            from { background: linear-gradient(to right, #4facfe, #00f2fe); }
-            to { background: linear-gradient(to right, #00f2fe, #4facfe); }
         }
         .weather-container {
             display: flex;
@@ -27,33 +22,31 @@
             padding: 20px;
         }
         .container {
-            width: 300px;
+            width: 350px;
             background: rgba(255, 255, 255, 0.2);
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             text-align: center;
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .container:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.4);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        h1 {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
         .weather-icon {
             font-size: 50px;
             margin: 10px;
+        }
+        .hourly-forecast {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        .hour-box {
+            min-width: 70px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            text-align: center;
+            margin: 5px;
         }
     </style>
 </head>
@@ -66,11 +59,12 @@
         const locations = [
             { name: "Gobichettipalayam", query: "Gobichettipalayam" },
             { name: "Vellankovil, Gobichettipalayam", query: "Vellankovil,Gobichettipalayam" },
-            { name: "Athani, Gobichettipalayam", query: "Athani,Gobichettipalayam" }
+            { name: "Athani, Gobichettipalayam", query: "Athani,Gobichettipalayam" },
+            { name: "Coimbatore", query: "Coimbatore" }
         ];
 
         async function fetchWeather(location) {
-            const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location.query}&units=metric&cnt=90&appid=${apiKey}`;
+            const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location.query}&units=metric&appid=${apiKey}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -83,10 +77,13 @@
 
         function displayWeather(city, data) {
             const temp = data.list[0].main.temp;
+            const feelsLike = data.list[0].main.feels_like;
             const humidity = data.list[0].main.humidity;
             const windSpeed = data.list[0].wind.speed;
             const todayRainChance = (data.list[0].pop || 0) * 100;
-            const nextRainDate = getNextRainDate(data.list);
+            const nextRain = getNextRainDate(data.list);
+            const sunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString();
+            const sunset = new Date(data.city.sunset * 1000).toLocaleTimeString();
             const weatherCondition = data.list[0].weather[0].main;
 
             const iconMap = {
@@ -105,11 +102,14 @@
             weatherBox.innerHTML = `
                 <h2>${city}</h2>
                 <i class="fas ${iconMap[weatherCondition] || "fa-cloud"} weather-icon"></i>
-                <h3>${temp}°C</h3>
+                <h3>${temp}°C (Feels like ${feelsLike}°C)</h3>
                 <p>Humidity: ${humidity}%</p>
                 <p>Wind Speed: ${windSpeed} m/s</p>
                 <h3>Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
-                ${nextRainDate ? `<h3>Next Expected Rain: ${nextRainDate}</h3>` : ""}
+                ${nextRain ? `<h3>Next Expected Rain: ${nextRain}</h3>` : ""}
+                <p>Sunrise: ${sunrise} 🌅</p>
+                <p>Sunset: ${sunset} 🌇</p>
+                <div class="hourly-forecast">${getHourlyForecast(data.list)}</div>
             `;
             weatherContainer.appendChild(weatherBox);
         }
@@ -117,10 +117,18 @@
         function getNextRainDate(list) {
             for (let i = 0; i < list.length; i++) {
                 if (list[i].weather[0].main === "Rain") {
-                    return new Date(list[i].dt * 1000).toLocaleDateString();
+                    return new Date(list[i].dt * 1000).toLocaleString();
                 }
             }
             return null;
+        }
+
+        function getHourlyForecast(list) {
+            return list.slice(0, 5).map(entry => {
+                const time = new Date(entry.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const temp = entry.main.temp;
+                return `<div class="hour-box">${time}<br>${temp}°C</div>`;
+            }).join('');
         }
 
         function refreshWeather() {
