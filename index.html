@@ -77,47 +77,32 @@
 
         function displayWeather(city, data) {
             const temp = data.list[0].main.temp;
-            const feelsLike = data.list[0].main.feels_like;
             const humidity = data.list[0].main.humidity;
             const windSpeed = data.list[0].wind.speed;
-            const uvIndex = data.list[0].main.uvi || "N/A";
-            const soilMoisture = (humidity / 100 * temp).toFixed(2); 
-            const dewPoint = data.list[0].main.temp - ((100 - humidity) / 5);
             const todayRainChance = (data.list[0].pop || 0) * 100;
             const nextRain = getNextRainDate(data.list);
-            const sunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString();
-            const sunset = new Date(data.city.sunset * 1000).toLocaleTimeString();
-            const moonPhase = getMoonPhase();
-            const weatherCondition = data.list[0].weather[0].main;
-
-            const iconMap = {
-                "Clear": "fa-sun",
-                "Clouds": "fa-cloud",
-                "Rain": "fa-cloud-showers-heavy",
-                "Drizzle": "fa-cloud-rain",
-                "Thunderstorm": "fa-bolt",
-                "Snow": "fa-snowflake",
-                "Mist": "fa-smog"
-            };
+            const soilMoisture = (humidity / 100 * temp).toFixed(2);
+            const irrigationAdvice = getIrrigationAdvice(temp, humidity, todayRainChance);
+            const pesticideAdvice = getPesticideRecommendation(temp, humidity);
+            const diseaseAlert = getCropDiseaseAlert(temp, humidity);
 
             const weatherContainer = document.getElementById("weather-container");
             const weatherBox = document.createElement("div");
             weatherBox.className = "container";
             weatherBox.innerHTML = `
                 <h2>${city}</h2>
-                <i class="fas ${iconMap[weatherCondition] || "fa-cloud"} weather-icon"></i>
-                <h3>${temp}°C (Feels like ${feelsLike}°C)</h3>
+                <h3>${temp}°C</h3>
                 <p>Humidity: ${humidity}%</p>
-                <p>Dew Point: ${dewPoint.toFixed(1)}°C</p>
-                <p>Soil Moisture Index: ${soilMoisture}</p>
-                <p>UV Index: ${uvIndex}</p>
                 <p>Wind Speed: ${windSpeed} m/s</p>
                 <h3>Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
                 ${nextRain ? `<h3>Next Expected Rain: ${nextRain}</h3>` : ""}
-                <p>Sunrise: ${sunrise} 🌅</p>
-                <p>Sunset: ${sunset} 🌇</p>
-                <p>Moon Phase: ${moonPhase}</p>
-                <div class="hourly-forecast">${getHourlyForecast(data.list)}</div>
+                <p>Soil Moisture Index: ${soilMoisture}</p>
+                <h3>Irrigation Advice:</h3>
+                <p>${irrigationAdvice}</p>
+                <h3>Pesticide Recommendation:</h3>
+                <p>${pesticideAdvice}</p>
+                <h3>Crop Disease Alert:</h3>
+                <p>${diseaseAlert}</p>
             `;
             weatherContainer.appendChild(weatherBox);
         }
@@ -131,16 +116,22 @@
             return null;
         }
 
-        function getHourlyForecast(list) {
-            return list.slice(0, 5).map(entry => {
-                const time = new Date(entry.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const temp = entry.main.temp;
-                return `<div class="hour-box">${time}<br>${temp}°C</div>`;
-            }).join('');
+        function getIrrigationAdvice(temp, humidity, rainChance) {
+            if (rainChance > 50) return "No irrigation needed, rain expected.";
+            if (humidity < 30 && temp > 30) return "Increase irrigation, dry and hot conditions.";
+            return "Moderate irrigation recommended.";
         }
 
-        function getMoonPhase() {
-            return "Waxing Gibbous";
+        function getPesticideRecommendation(temp, humidity) {
+            if (temp > 30 && humidity > 70) return "Use fungicides to prevent fungal infections.";
+            if (humidity < 40) return "Low humidity, minimal pesticide needed.";
+            return "Regular pesticide application recommended.";
+        }
+
+        function getCropDiseaseAlert(temp, humidity) {
+            if (humidity > 80 && temp > 25) return "Risk of fungal diseases like rust or mildew.";
+            if (temp < 15) return "Cold stress may affect sensitive crops.";
+            return "No major disease risk detected.";
         }
 
         function refreshWeather() {
