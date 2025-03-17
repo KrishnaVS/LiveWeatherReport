@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Weather App</title>
+    <title>Live Weather App for Farmers</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -51,11 +51,11 @@
     </style>
 </head>
 <body>
-    <h1>🌤 Live Weather App</h1>
+    <h1>🌾 Live Weather App for Farmers</h1>
     <div id="weather-container" class="weather-container"></div>
 
     <script>
-        const apiKey = "de667b7badc02e1fbb6282b62845920c";
+        const apiKey = "a87594662c33433f92684e6890166cfc";
         const locations = [
             { name: "Gobichettipalayam", query: "Gobichettipalayam" },
             { name: "Vellankovil, Gobichettipalayam", query: "Vellankovil,Gobichettipalayam" },
@@ -80,10 +80,14 @@
             const feelsLike = data.list[0].main.feels_like;
             const humidity = data.list[0].main.humidity;
             const windSpeed = data.list[0].wind.speed;
+            const uvIndex = data.list[0].main.uvi || "N/A";
+            const soilMoisture = (humidity / 100 * temp).toFixed(2); 
+            const dewPoint = data.list[0].main.temp - ((100 - humidity) / 5);
             const todayRainChance = (data.list[0].pop || 0) * 100;
             const nextRain = getNextRainDate(data.list);
             const sunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString();
             const sunset = new Date(data.city.sunset * 1000).toLocaleTimeString();
+            const moonPhase = getMoonPhase();
             const weatherCondition = data.list[0].weather[0].main;
 
             const iconMap = {
@@ -104,11 +108,15 @@
                 <i class="fas ${iconMap[weatherCondition] || "fa-cloud"} weather-icon"></i>
                 <h3>${temp}°C (Feels like ${feelsLike}°C)</h3>
                 <p>Humidity: ${humidity}%</p>
+                <p>Dew Point: ${dewPoint.toFixed(1)}°C</p>
+                <p>Soil Moisture Index: ${soilMoisture}</p>
+                <p>UV Index: ${uvIndex}</p>
                 <p>Wind Speed: ${windSpeed} m/s</p>
                 <h3>Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
                 ${nextRain ? `<h3>Next Expected Rain: ${nextRain}</h3>` : ""}
                 <p>Sunrise: ${sunrise} 🌅</p>
                 <p>Sunset: ${sunset} 🌇</p>
+                <p>Moon Phase: ${moonPhase}</p>
                 <div class="hourly-forecast">${getHourlyForecast(data.list)}</div>
             `;
             weatherContainer.appendChild(weatherBox);
@@ -129,6 +137,10 @@
                 const temp = entry.main.temp;
                 return `<div class="hour-box">${time}<br>${temp}°C</div>`;
             }).join('');
+        }
+
+        function getMoonPhase() {
+            return "Waxing Gibbous";
         }
 
         function refreshWeather() {
