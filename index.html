@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right, #4facfe, #00f2fe);
+            background: linear-gradient(to right, #1e3c72, #2a5298);
             color: #fff;
             text-align: center;
             padding: 20px;
@@ -23,36 +23,42 @@
         }
         .container {
             width: 350px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
-            text-align: center;
+            color: #e3f2fd;
         }
         .weather-icon {
             font-size: 50px;
             margin: 10px;
+            color: #ffeb3b;
         }
-        .hourly-forecast {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            overflow-x: auto;
+        .loading {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #fff;
         }
-        .hour-box {
-            min-width: 70px;
-            padding: 5px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            text-align: center;
-            margin: 5px;
+        h1 {
+            color: #ffcc00;
+        }
+        h2 {
+            color: #ffeb3b;
+        }
+        p {
+            color: #b3e5fc;
+        }
+        h3 {
+            color: #ff9800;
         }
     </style>
 </head>
 <body>
-    <h1>🌾 Live Weather App for Farmers</h1>
-    <div id="weather-container" class="weather-container"></div>
+    <h1>Weather App</h1>
+    <div id="weather-container" class="weather-container">
+        <p class="loading">Loading weather data...</p>
+    </div>
 
     <script>
         const apiKey = "a87594662c33433f92684e6890166cfc";
@@ -72,22 +78,19 @@
                 displayWeather(location.name, data);
             } catch (error) {
                 console.error("Failed to fetch weather data", error);
+                document.getElementById("weather-container").innerHTML += `<p style='color:red;'>Weather data not available for ${location.name}</p>`;
             }
         }
 
         function displayWeather(city, data) {
             const temp = data.list[0].main.temp;
-            const feelsLike = data.list[0].main.feels_like;
             const humidity = data.list[0].main.humidity;
             const windSpeed = data.list[0].wind.speed;
-            const uvIndex = data.list[0].main.uvi || "N/A";
-            const soilMoisture = (humidity / 100 * temp).toFixed(2); 
             const dewPoint = data.list[0].main.temp - ((100 - humidity) / 5);
             const todayRainChance = (data.list[0].pop || 0) * 100;
-            const nextRain = getNextRainDate(data.list);
             const sunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString();
             const sunset = new Date(data.city.sunset * 1000).toLocaleTimeString();
-            const moonPhase = getMoonPhase();
+            const nextRain = getNextRainDate(data.list);
             const weatherCondition = data.list[0].weather[0].main;
 
             const iconMap = {
@@ -101,23 +104,21 @@
             };
 
             const weatherContainer = document.getElementById("weather-container");
+            document.querySelector(".loading")?.remove();
+            
             const weatherBox = document.createElement("div");
             weatherBox.className = "container";
             weatherBox.innerHTML = `
                 <h2>${city}</h2>
                 <i class="fas ${iconMap[weatherCondition] || "fa-cloud"} weather-icon"></i>
-                <h3>${temp}°C (Feels like ${feelsLike}°C)</h3>
+                <h3>${temp}°C</h3>
                 <p>Humidity: ${humidity}%</p>
                 <p>Dew Point: ${dewPoint.toFixed(1)}°C</p>
-                <p>Soil Moisture Index: ${soilMoisture}</p>
-                <p>UV Index: ${uvIndex}</p>
                 <p>Wind Speed: ${windSpeed} m/s</p>
                 <h3>Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
-                ${nextRain ? `<h3>Next Expected Rain: ${nextRain}</h3>` : ""}
+                ${nextRain ? `<h3 style='color:#80d8ff;'>Next Expected Rain: ${nextRain}</h3>` : ""}
                 <p>Sunrise: ${sunrise} 🌅</p>
                 <p>Sunset: ${sunset} 🌇</p>
-                <p>Moon Phase: ${moonPhase}</p>
-                <div class="hourly-forecast">${getHourlyForecast(data.list)}</div>
             `;
             weatherContainer.appendChild(weatherBox);
         }
@@ -131,20 +132,8 @@
             return null;
         }
 
-        function getHourlyForecast(list) {
-            return list.slice(0, 5).map(entry => {
-                const time = new Date(entry.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const temp = entry.main.temp;
-                return `<div class="hour-box">${time}<br>${temp}°C</div>`;
-            }).join('');
-        }
-
-        function getMoonPhase() {
-            return "Waxing Gibbous";
-        }
-
         function refreshWeather() {
-            document.getElementById("weather-container").innerHTML = "";
+            document.getElementById("weather-container").innerHTML = '<p class="loading">Updating weather data...</p>';
             locations.forEach(fetchWeather);
         }
 
