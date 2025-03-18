@@ -13,7 +13,6 @@
             color: #fff;
             text-align: center;
             padding: 20px;
-            animation: fadeIn 2s ease-in-out;
         }
         .weather-container {
             display: flex;
@@ -30,18 +29,10 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             text-align: center;
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            opacity: 0;
-            animation: slideIn 1s ease-in-out forwards;
-        }
-        .container:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.4);
         }
         .weather-icon {
             font-size: 50px;
             margin: 10px;
-            animation: spin 2s linear infinite;
         }
         .hourly-forecast {
             display: flex;
@@ -56,28 +47,13 @@
             border-radius: 6px;
             text-align: center;
             margin: 5px;
-            transition: transform 0.3s ease-in-out;
-        }
-        .hour-box:hover {
-            transform: scale(1.1);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <h1>🌾 Live Weather App for Farmers</h1>
     <div id="weather-container" class="weather-container"></div>
+
     <script>
         const apiKey = "a87594662c33433f92684e6890166cfc";
         const locations = [
@@ -86,7 +62,7 @@
             { name: "Athani, Gobichettipalayam", query: "Athani,Gobichettipalayam" },
             { name: "Coimbatore", query: "Coimbatore" }
         ];
-        
+
         async function fetchWeather(location) {
             const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location.query}&units=metric&appid=${apiKey}`;
             try {
@@ -98,7 +74,7 @@
                 console.error("Failed to fetch weather data", error);
             }
         }
-        
+
         function displayWeather(city, data) {
             const temp = data.list[0].main.temp;
             const feelsLike = data.list[0].main.feels_like;
@@ -138,9 +114,42 @@
                 <p>Wind Speed: ${windSpeed} m/s</p>
                 <h3>Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
                 ${nextRain ? `<h3>Next Expected Rain: ${nextRain}</h3>` : ""}
+                <p>Sunrise: ${sunrise} 🌅</p>
+                <p>Sunset: ${sunset} 🌇</p>
+                <p>Moon Phase: ${moonPhase}</p>
+                <div class="hourly-forecast">${getHourlyForecast(data.list)}</div>
             `;
             weatherContainer.appendChild(weatherBox);
         }
+
+        function getNextRainDate(list) {
+            for (let i = 0; i < list.length; i++) {
+                if (list[i].weather[0].main === "Rain") {
+                    return new Date(list[i].dt * 1000).toLocaleString();
+                }
+            }
+            return null;
+        }
+
+        function getHourlyForecast(list) {
+            return list.slice(0, 5).map(entry => {
+                const time = new Date(entry.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const temp = entry.main.temp;
+                return `<div class="hour-box">${time}<br>${temp}°C</div>`;
+            }).join('');
+        }
+
+        function getMoonPhase() {
+            return "Waxing Gibbous";
+        }
+
+        function refreshWeather() {
+            document.getElementById("weather-container").innerHTML = "";
+            locations.forEach(fetchWeather);
+        }
+
+        setInterval(refreshWeather, 1800000);
+        refreshWeather();
     </script>
 </body>
 </html>
