@@ -13,9 +13,11 @@
             color: #fff;
             text-align: center;
             padding: 20px;
+            box-sizing: border-box;
         }
         .container {
-            width: 350px;
+            width: 90%; /* Responsive width */
+            max-width: 400px; /* Prevents excessive width */
             background: rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 12px;
@@ -24,39 +26,41 @@
             color: #e3f2fd;
             margin: 20px auto;
             font-family: 'Noto Sans Tamil', sans-serif;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
-        .weather-icon {
-            font-size: 50px;
-            color: #ffeb3b;
-        }
-        .alert {
-            color: red;
-            font-weight: bold;
+        .weather-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
         }
         .language-toggle {
-            padding: 10px;
-            font-size: 16px;
+            padding: 12px 16px;
+            font-size: 1em;
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            margin: 10px auto;
             cursor: pointer;
             border-radius: 5px;
             background: #ffeb3b;
             color: black;
             border: none;
         }
-        h1 { color: #ffcc00; }
+        h1 { font-size: 1.8em; color: #ffcc00; }
         h2, h3 { color: #ffeb3b; }
-        p { color: #b3e5fc; }
+        p { font-size: 1em; color: #b3e5fc; }
     </style>
 </head>
 <body>
     <button class="language-toggle" onclick="toggleLanguage()">🌐 தமிழ் / English</button>
     <h1 id="title"><i class="fas fa-cloud-sun"></i> Weather App</h1>
-    
     <div id="alerts" class="container"></div>
-    <div id="weather-container"></div>
+    <div id="weather-container" class="weather-container"></div>
 
     <script>
         const apiKey = "a87594662c33433f92684e6890166cfc";
-        let isTamil = false; // Default language is English
+        let isTamil = false;
 
         const locations = [
             { nameEn: "Gobichettipalayam", nameTa: "கோபிசெட்டிபாளையம்", query: "Gobichettipalayam" },
