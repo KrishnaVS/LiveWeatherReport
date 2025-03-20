@@ -118,7 +118,7 @@
 
         function toggleLanguage() {
             isTamil = !isTamil;
-            document.getElementById("title").innerHTML = isTamil ? "<i class='fas fa-cloud-sun'></i> வானிலை பயன்பாடு" : "<i class='fas fa-cloud-sun'></i> Weather App";
+            document.getElementById("title").innerHTML = isTamil ? "<i class='fas fa-cloud-sun'></i> வானிலை" : "<i class='fas fa-cloud-sun'></i> Weather App";
             document.getElementById("weather-container").innerHTML = "";
             locations.forEach(fetchWeather);
         }
