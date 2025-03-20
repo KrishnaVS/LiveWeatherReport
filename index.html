@@ -6,19 +6,13 @@
     <title>Live Weather App for Farmers</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(to right, #1e3c72, #2a5298);
             color: #fff;
             text-align: center;
-            padding: 20px;
-        }
-        .weather-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
             padding: 20px;
         }
         .container {
@@ -29,36 +23,27 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             color: #e3f2fd;
+            margin: 20px auto;
         }
         .weather-icon {
             font-size: 50px;
-            margin: 10px;
             color: #ffeb3b;
         }
-        .loading {
-            font-size: 20px;
-            margin-top: 20px;
-            color: #fff;
+        .alert {
+            color: red;
+            font-weight: bold;
         }
-        h1 {
-            color: #ffcc00;
-        }
-        h2 {
-            color: #ffeb3b;
-        }
-        p {
-            color: #b3e5fc;
-        }
-        h3 {
-            color: #ff9800;
-        }
+        h1 { color: #ffcc00; }
+        h2, h3 { color: #ffeb3b; }
+        p { color: #b3e5fc; }
     </style>
 </head>
 <body>
     <h1><i class="fas fa-cloud-sun"></i> Weather App</h1>
-    <div id="weather-container" class="weather-container">
-        <p class="loading"><i class="fas fa-spinner fa-spin"></i> Loading weather data...</p>
-    </div>
+    
+    <div id="alerts" class="container"></div>
+    <div id="weather-container"></div>
+    <div id="rain-forecast" class="container"></div>
 
     <script>
         const apiKey = "a87594662c33433f92684e6890166cfc";
@@ -77,8 +62,7 @@
                 if (data.cod !== "200") throw new Error("Invalid API response");
                 displayWeather(location.name, data);
             } catch (error) {
-                console.error("Failed to fetch weather data", error);
-                document.getElementById("weather-container").innerHTML += `<p style='color:red;'><i class="fas fa-exclamation-triangle"></i> Weather data not available for ${location.name}</p>`;
+                document.getElementById("weather-container").innerHTML += `<p class='alert'>⚠️ Weather data not available for ${location.name}</p>`;
             }
         }
 
@@ -86,39 +70,29 @@
             const temp = data.list[0].main.temp;
             const humidity = data.list[0].main.humidity;
             const windSpeed = data.list[0].wind.speed;
-            const dewPoint = data.list[0].main.temp - ((100 - humidity) / 5);
-            const todayRainChance = (data.list[0].pop || 0) * 100;
-            const sunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString();
-            const sunset = new Date(data.city.sunset * 1000).toLocaleTimeString();
+            const rainChance = (data.list[0].pop || 0) * 100;
             const nextRain = getNextRainDate(data.list);
-            const weatherCondition = data.list[0].weather[0].main;
+            let alertMessage = "";
 
-            const iconMap = {
-                "Clear": "fa-sun",
-                "Clouds": "fa-cloud",
-                "Rain": "fa-cloud-showers-heavy",
-                "Drizzle": "fa-cloud-rain",
-                "Thunderstorm": "fa-bolt",
-                "Snow": "fa-snowflake",
-                "Mist": "fa-smog"
-            };
+            if (rainChance > 70) alertMessage = "⚠️ Heavy Rain Expected!";
+            else if (windSpeed > 15) alertMessage = "🌪️ Strong Winds!";
+            else if (temp > 40) alertMessage = "🔥 Extreme Heat Warning!";
+            
+            if (alertMessage) {
+                document.getElementById("alerts").innerHTML = `<p class='alert'>${alertMessage}</p>`;
+                sendBrowserNotification(alertMessage);
+            }
 
             const weatherContainer = document.getElementById("weather-container");
-            document.querySelector(".loading")?.remove();
-            
             const weatherBox = document.createElement("div");
             weatherBox.className = "container";
             weatherBox.innerHTML = `
-                <h2><i class="fas fa-map-marker-alt"></i> ${city}</h2>
-                <i class="fas ${iconMap[weatherCondition] || "fa-cloud"} weather-icon"></i>
-                <h3><i class="fas fa-thermometer-half"></i> ${temp}°C</h3>
-                <p><i class="fas fa-tint"></i> Humidity: ${humidity}%</p>
-                <p><i class="fas fa-temperature-low"></i> Dew Point: ${dewPoint.toFixed(1)}°C</p>
-                <p><i class="fas fa-wind"></i> Wind Speed: ${windSpeed} m/s</p>
-                <h3><i class="fas fa-cloud-rain"></i> Today's Rain Chance: ${todayRainChance.toFixed(0)}%</h3>
-                ${nextRain ? `<h3 style='color:#80d8ff;'><i class="fas fa-calendar-alt"></i> Next Expected Rain: ${nextRain}</h3>` : ""}
-                <p><i class="fas fa-sun"></i> Sunrise: ${sunrise} 🌅</p>
-                <p><i class="fas fa-moon"></i> Sunset: ${sunset} 🌇</p>
+                <h2>${city}</h2>
+                <p>🌡️ Temperature: ${temp}°C</p>
+                <p>💧 Humidity: ${humidity}%</p>
+                <p>🌬️ Wind Speed: ${windSpeed} m/s</p>
+                <p>🌧️ Rain Chance: ${rainChance.toFixed(0)}%</p>
+                ${nextRain ? `<p>⏳ Next Expected Rain: ${nextRain}</p>` : `<p>No rain expected soon.</p>`}
             `;
             weatherContainer.appendChild(weatherBox);
         }
@@ -132,13 +106,37 @@
             return null;
         }
 
-        function refreshWeather() {
-            document.getElementById("weather-container").innerHTML = '<p class="loading"><i class="fas fa-sync-alt fa-spin"></i> Updating weather data...</p>';
-            locations.forEach(fetchWeather);
+        function sendBrowserNotification(message) {
+            if (Notification.permission === "granted") {
+                new Notification("Weather Alert", { body: message });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("Weather Alert", { body: message });
+                    }
+                });
+            }
         }
 
-        setInterval(refreshWeather, 1800000);
-        refreshWeather();
+        async function displayNextRain() {
+            let rainForecastHtml = "<h3>Next Expected Rain for Each Location:</h3>";
+            for (const location of locations) {
+                const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location.query}&units=metric&appid=${apiKey}`;
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (data.cod !== "200") throw new Error("Invalid API response");
+                    const nextRain = getNextRainDate(data.list);
+                    rainForecastHtml += `<p><strong>${location.name}:</strong> ${nextRain ? nextRain : "No rain expected soon."}</p>`;
+                } catch (error) {
+                    rainForecastHtml += `<p><strong>${location.name}:</strong> Data unavailable.</p>`;
+                }
+            }
+            document.getElementById("rain-forecast").innerHTML = rainForecastHtml;
+        }
+
+        locations.forEach(fetchWeather);
+        displayNextRain();
     </script>
 </body>
 </html>
