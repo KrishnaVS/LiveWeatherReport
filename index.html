@@ -16,8 +16,8 @@
             box-sizing: border-box;
         }
         .container {
-            width: 90%; /* Responsive width */
-            max-width: 400px; /* Prevents excessive width */
+            width: 90%;
+            max-width: 400px;
             background: rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 12px;
@@ -28,6 +28,10 @@
             font-family: 'Noto Sans Tamil', sans-serif;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            transition: transform 0.3s ease-in-out;
+        }
+        .container:hover {
+            transform: scale(1.05);
         }
         .weather-container {
             display: grid;
@@ -46,10 +50,19 @@
             background: #ffeb3b;
             color: black;
             border: none;
+            transition: background 0.3s ease;
         }
-        h1 { font-size: 1.8em; color: #ffcc00; }
-        h2, h3 { color: #ffeb3b; }
-        p { font-size: 1em; color: #b3e5fc; }
+        .language-toggle:hover {
+            background: #ffd700;
+        }
+        h1 { font-size: 2em; color: #ffcc00; }
+        h2 { font-size: 1.5em; color: #ffeb3b; }
+        p { font-size: 1.1em; color: #b3e5fc; }
+        .weather-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #ffeb3b;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +114,7 @@
             const weatherBox = document.createElement("div");
             weatherBox.className = "container";
             weatherBox.innerHTML = `
+                <div class='weather-icon'><i class='fas fa-cloud-sun'></i></div>
                 <h2>${isTamil ? location.nameTa : location.nameEn}</h2>
                 <p>🌡️ ${translations.temperature}: ${temp}°C</p>
                 <p>💧 ${translations.humidity}: ${humidity}%</p>
